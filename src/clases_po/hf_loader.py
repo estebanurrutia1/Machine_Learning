@@ -1,26 +1,44 @@
+"""Carga datasets de Hugging Face y, opcionalmente, los guarda en disco."""
 from __future__ import annotations
 
 from pathlib import Path
-from typing import literal
-from datasets import load_dataset
+from typing import Literal
+from datasets import load_dataset  
 import pandas as pd
 
-filetype = literal["csv", "json", "parquet", "xlsx"]
+FileType = Literal["csv", "json", "parquet", "xlsx"]
+
 
 class HFDatasetLoader:
+    """Descarga un dataset de Hugging Face y lo devuelve como DataFrame.
 
-    _SUPPORTED_FILETYPES = {"csv", "json", "parquet", "xlsx"}
+    Args:
+        dataset_name: Identificador del dataset en Hugging Face. Puede ser,
+            por ejemplo, ``"Fast_Food_Restaurants"`` si ese es el nombre del
+            repositorio del dataset.
+        config: Configuración del dataset, si tiene más de una.
+        split: División que se desea cargar.
+        token: Token de Hugging Face para datasets privados.
+        cache_dir: Directorio de caché de Hugging Face.
+        max_rows: Cantidad máxima de filas a cargar.
+        filename: Ruta opcional donde se guardará el DataFrame.
+        file_type: Formato opcional de salida: ``csv``, ``json``, ``parquet``
+            o ``xlsx``. Si no se indica, se infiere desde la extensión de
+            ``filename``.
+    """
+
+    _SUPPORTED_FILE_TYPES = {"csv", "json", "parquet", "xlsx"}
 
     def __init__(
         self,
-        dataset_name:str,
-        config:str|None = None,
-        split:str = "train",
-        token:str|None = None,
-        cache_dir:str|None = None,
-        max_rows:int|None = None,
-        filename:str|Path|None = None,
-        file_type:str|None = None,
+        dataset_name: str,
+        config: str | None = None,
+        split: str = "train",
+        token: str | None = None,
+        cache_dir: str | None = None,
+        max_rows: int | None = None,
+        filename: str | Path | None = None,
+        file_type: str | None = None,
     ) -> None:
         self.dataset_name = dataset_name
         self.config = config
@@ -28,7 +46,7 @@ class HFDatasetLoader:
         self.token = token
         self.cache_dir = cache_dir
         self.max_rows = max_rows
-        self.filename = filename
+        self.filename = Path(filename) if filename is not None else None
         self.file_type = self._normalize_file_type(file_type)
         self.df: pd.DataFrame | None = None
 
@@ -98,5 +116,3 @@ class HFDatasetLoader:
             df.to_parquet(self.filename, index=False)
         elif file_type == "xlsx":
             df.to_excel(self.filename, index=False)
-
-        
